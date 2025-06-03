@@ -1,41 +1,57 @@
-# app/__init__.py - CLEAN VERSION
+import os
+import logging
 from flask import Flask
 from flask_login import LoginManager
-from app.models import db, User
+
+# Don't import db here - we'll import it from models
+login_manager = LoginManager()
 
 
-def create_app():
+def create_app(config_name=None):
+    """Application factory pattern."""
+
+    if config_name is None:
+        config_name = os.environ.get('FLASK_ENV', 'development')
+
     app = Flask(__name__)
-    app.config['SECRET_KEY'] = 'your-secret-key-here'
-    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///app.db'
-    app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024
-    app.config['DEBUG'] = True
 
-    # Initialize extensions
+    # Load configuration
+    from config import config
+    app.config.from_object(config[config_name])
+
+    # Ensure upload directory exists
+    upload_dir = app.config['UPLOAD_FOLDER']
+    if not os.path.exists(upload_dir):
+        os.makedirs(upload_dir)
+
+    # Initialize extensions with app
+    from app.models import db
     db.init_app(app)
-
-    # Initialize Flask-Login
-    login_manager = LoginManager()
     login_manager.init_app(app)
+
+    # Configure Flask-Login
     login_manager.login_view = 'main.login'
     login_manager.login_message = 'Please log in to access this page.'
     login_manager.login_message_category = 'info'
 
     @login_manager.user_loader
     def load_user(user_id):
+        from app.models import User
         return User.query.get(int(user_id))
 
     # Register blueprints
     from app.routes import main
     app.register_blueprint(main)
 
-    # Create tables
+    # Create database tables
     with app.app_context():
         db.create_all()
 
-        # Create admin user if doesn't exist
+        # Create default admin user if it doesn't exist
+        from app.models import User
+        from werkzeug.security import generate_password_hash
+
         if not User.query.filter_by(username='admin').first():
-            from werkzeug.security import generate_password_hash
             admin = User(
                 username='admin',
                 email='admin@example.com',
