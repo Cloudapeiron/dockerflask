@@ -1,14 +1,457 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Upload Files</title>
-</head>
-<body>
-    <h1>File Upload</h1>
-    <form method="POST" enctype="multipart/form-data">
-        <input type="file" name="file">
-        <button type="submit">Upload</button>
-    </form>
-    <a href="{{ url_for('main.my_files') }}">View My Files</a>
-</body>
-</html>
+{% extends 'base.html' %} {% block title %}Upload Files{% endblock %} {% block
+content %}
+<div style="max-width: 800px">
+  <h2 style="margin-bottom: 1.5rem; color: #333">📁 Upload Files</h2>
+
+  <div
+    style="
+      background: #f8f9fa;
+      padding: 1.5rem;
+      border-radius: 8px;
+      margin-bottom: 2rem;
+      border-left: 4px solid #667eea;
+    "
+  >
+    <h4 style="margin: 0 0 0.5rem 0; color: #333">📋 Upload Guidelines</h4>
+    <ul style="margin: 0; padding-left: 1.2rem; color: #666">
+      <li>Maximum file size: <strong>16 MB</strong></li>
+      <li>Allowed types: PDF, Images, Documents, Code files, Archives</li>
+      <li>
+        Supported formats: txt, pdf, png, jpg, jpeg, gif, doc, docx, xlsx, csv,
+        zip, py, js, html, css, md
+      </li>
+      <li>
+        <strong>✨ New:</strong> Drag & drop multiple files or click to browse!
+      </li>
+    </ul>
+  </div>
+
+  <!-- Drag & Drop Upload Area -->
+  <div
+    id="drop-zone"
+    style="
+      border: 3px dashed #ccc;
+      border-radius: 12px;
+      padding: 3rem;
+      text-align: center;
+      background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+      transition: all 0.3s ease;
+      cursor: pointer;
+      margin-bottom: 2rem;
+      position: relative;
+      overflow: hidden;
+    "
+  >
+    <div style="pointer-events: none">
+      <div style="font-size: 3rem; margin-bottom: 1rem">📤</div>
+      <h3 style="margin: 0 0 0.5rem 0; color: #333">Drag & Drop Files Here</h3>
+      <p style="margin: 0; color: #666; font-size: 1.1rem">
+        or click to browse files
+      </p>
+      <p style="margin: 0.5rem 0 0 0; color: #999; font-size: 0.9rem">
+        You can upload multiple files at once
+      </p>
+    </div>
+
+    <!-- Hidden file input -->
+    <input
+      type="file"
+      id="file-input"
+      multiple
+      style="
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        opacity: 0;
+        cursor: pointer;
+      "
+    />
+  </div>
+
+  <!-- Upload Queue -->
+  <div id="upload-queue" style="display: none; margin-bottom: 2rem">
+    <h4 style="margin-bottom: 1rem; color: #333">📋 Upload Queue</h4>
+    <div id="file-list"></div>
+    <div style="margin-top: 1rem">
+      <button
+        id="upload-all-btn"
+        style="
+          background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+          color: white;
+          border: none;
+          padding: 0.75rem 2rem;
+          border-radius: 5px;
+          font-size: 1rem;
+          cursor: pointer;
+          margin-right: 1rem;
+          transition: transform 0.2s;
+        "
+      >
+        🚀 Upload All Files
+      </button>
+      <button
+        id="clear-queue-btn"
+        style="
+          background: #6c757d;
+          color: white;
+          border: none;
+          padding: 0.75rem 1rem;
+          border-radius: 5px;
+          font-size: 1rem;
+          cursor: pointer;
+          transition: transform 0.2s;
+        "
+      >
+        🗑️ Clear Queue
+      </button>
+    </div>
+  </div>
+
+  <!-- Upload Progress -->
+  <div id="upload-progress" style="display: none; margin-bottom: 2rem">
+    <h4 style="margin-bottom: 1rem; color: #333">📊 Upload Progress</h4>
+    <div
+      id="overall-progress"
+      style="
+        background: #e9ecef;
+        border-radius: 10px;
+        height: 20px;
+        margin-bottom: 1rem;
+        overflow: hidden;
+      "
+    >
+      <div
+        id="overall-progress-bar"
+        style="
+          background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+          height: 100%;
+          width: 0%;
+          transition: width 0.3s ease;
+          border-radius: 10px;
+        "
+      ></div>
+    </div>
+    <div id="upload-status" style="color: #666; font-size: 0.9rem"></div>
+  </div>
+
+  <div style="text-align: center; padding: 1rem">
+    <a
+      href="{{ url_for('main.my_files') }}"
+      style="color: #667eea; text-decoration: none; font-weight: 500"
+    >
+      📂 View My Files
+    </a>
+  </div>
+</div>
+
+<style>
+  .file-item {
+    background: white;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 0.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: all 0.3s ease;
+  }
+
+  .file-item:hover {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  }
+
+  .file-info {
+    flex: 1;
+  }
+
+  .file-name {
+    font-weight: 500;
+    color: #333;
+    margin-bottom: 0.25rem;
+  }
+
+  .file-size {
+    color: #666;
+    font-size: 0.9rem;
+  }
+
+  .file-progress {
+    background: #e9ecef;
+    border-radius: 10px;
+    height: 6px;
+    margin-top: 0.5rem;
+    overflow: hidden;
+  }
+
+  .file-progress-bar {
+    background: linear-gradient(90deg, #28a745 0%, #20c997 100%);
+    height: 100%;
+    width: 0%;
+    transition: width 0.3s ease;
+    border-radius: 10px;
+  }
+
+  .remove-btn {
+    background: #dc3545;
+    color: white;
+    border: none;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+
+  .remove-btn:hover {
+    background: #c82333;
+  }
+
+  #drop-zone.drag-over {
+    border-color: #667eea !important;
+    background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%) !important;
+    transform: scale(1.02);
+  }
+</style>
+
+<script>
+  let uploadQueue = [];
+  let isUploading = false;
+
+  // Get DOM elements
+  const dropZone = document.getElementById("drop-zone");
+  const fileInput = document.getElementById("file-input");
+  const uploadQueueDiv = document.getElementById("upload-queue");
+  const fileListDiv = document.getElementById("file-list");
+  const uploadAllBtn = document.getElementById("upload-all-btn");
+  const clearQueueBtn = document.getElementById("clear-queue-btn");
+  const uploadProgressDiv = document.getElementById("upload-progress");
+  const overallProgressBar = document.getElementById("overall-progress-bar");
+  const uploadStatus = document.getElementById("upload-status");
+
+  // Allowed file extensions
+  const allowedExtensions = [
+    "txt",
+    "pdf",
+    "png",
+    "jpg",
+    "jpeg",
+    "gif",
+    "doc",
+    "docx",
+    "xlsx",
+    "csv",
+    "zip",
+    "py",
+    "js",
+    "html",
+    "css",
+    "md",
+  ];
+  const maxFileSize = 16 * 1024 * 1024; // 16MB
+
+  // Drag and drop event handlers
+  dropZone.addEventListener("dragover", (e) => {
+    e.preventDefault();
+    dropZone.classList.add("drag-over");
+  });
+
+  dropZone.addEventListener("dragleave", (e) => {
+    e.preventDefault();
+    dropZone.classList.remove("drag-over");
+  });
+
+  dropZone.addEventListener("drop", (e) => {
+    e.preventDefault();
+    dropZone.classList.remove("drag-over");
+    const files = Array.from(e.dataTransfer.files);
+    addFilesToQueue(files);
+  });
+
+  // File input change handler
+  fileInput.addEventListener("change", (e) => {
+    const files = Array.from(e.target.files);
+    addFilesToQueue(files);
+  });
+
+  // Add files to upload queue
+  function addFilesToQueue(files) {
+    files.forEach((file) => {
+      if (validateFile(file)) {
+        const fileId = Date.now() + Math.random();
+        uploadQueue.push({
+          id: fileId,
+          file: file,
+          progress: 0,
+          status: "pending",
+        });
+      }
+    });
+    updateQueueDisplay();
+  }
+
+  // Validate file
+  function validateFile(file) {
+    const extension = file.name.split(".").pop().toLowerCase();
+
+    if (!allowedExtensions.includes(extension)) {
+      alert(`File type .${extension} not allowed`);
+      return false;
+    }
+
+    if (file.size > maxFileSize) {
+      alert(`File ${file.name} is too large (max 16MB)`);
+      return false;
+    }
+
+    return true;
+  }
+
+  // Update queue display
+  function updateQueueDisplay() {
+    if (uploadQueue.length === 0) {
+      uploadQueueDiv.style.display = "none";
+      return;
+    }
+
+    uploadQueueDiv.style.display = "block";
+    fileListDiv.innerHTML = "";
+
+    uploadQueue.forEach((item) => {
+      const fileDiv = document.createElement("div");
+      fileDiv.className = "file-item";
+      fileDiv.innerHTML = `
+            <div class="file-info">
+                <div class="file-name">${item.file.name}</div>
+                <div class="file-size">${formatFileSize(item.file.size)}</div>
+                <div class="file-progress">
+                    <div class="file-progress-bar" style="width: ${
+                      item.progress
+                    }%"></div>
+                </div>
+            </div>
+            <button class="remove-btn" onclick="removeFromQueue('${
+              item.id
+            }')">Remove</button>
+        `;
+      fileListDiv.appendChild(fileDiv);
+    });
+  }
+
+  // Remove file from queue
+  function removeFromQueue(fileId) {
+    uploadQueue = uploadQueue.filter((item) => item.id != fileId);
+    updateQueueDisplay();
+  }
+
+  // Clear entire queue
+  clearQueueBtn.addEventListener("click", () => {
+    uploadQueue = [];
+    updateQueueDisplay();
+  });
+
+  // Upload all files
+  uploadAllBtn.addEventListener("click", () => {
+    if (uploadQueue.length === 0 || isUploading) return;
+
+    isUploading = true;
+    uploadProgressDiv.style.display = "block";
+    uploadAllBtn.disabled = true;
+    uploadAllBtn.textContent = "⏳ Uploading...";
+
+    uploadFilesSequentially(0);
+  });
+
+  // Upload files one by one
+  async function uploadFilesSequentially(index) {
+    if (index >= uploadQueue.length) {
+      // All uploads complete
+      uploadComplete();
+      return;
+    }
+
+    const item = uploadQueue[index];
+    uploadStatus.textContent = `Uploading ${item.file.name} (${index + 1}/${
+      uploadQueue.length
+    })`;
+
+    try {
+      await uploadSingleFile(item, index);
+      setTimeout(() => uploadFilesSequentially(index + 1), 500); // Small delay between uploads
+    } catch (error) {
+      console.error("Upload failed:", error);
+      item.status = "error";
+      uploadFilesSequentially(index + 1); // Continue with next file
+    }
+  }
+
+  // Upload single file
+  function uploadSingleFile(item, index) {
+    return new Promise((resolve, reject) => {
+      const formData = new FormData();
+      formData.append("file", item.file);
+
+      const xhr = new XMLHttpRequest();
+
+      xhr.upload.addEventListener("progress", (e) => {
+        if (e.lengthComputable) {
+          const percentComplete = (e.loaded / e.total) * 100;
+          item.progress = percentComplete;
+
+          // Update file progress bar
+          const progressBar =
+            document.querySelectorAll(".file-progress-bar")[index];
+          if (progressBar) {
+            progressBar.style.width = percentComplete + "%";
+          }
+
+          // Update overall progress
+          const overallProgress =
+            ((index + percentComplete / 100) / uploadQueue.length) * 100;
+          overallProgressBar.style.width = overallProgress + "%";
+        }
+      });
+
+      xhr.addEventListener("load", () => {
+        if (xhr.status === 200) {
+          item.status = "complete";
+          item.progress = 100;
+          resolve();
+        } else {
+          reject(new Error("Upload failed"));
+        }
+      });
+
+      xhr.addEventListener("error", () => {
+        reject(new Error("Network error"));
+      });
+
+      xhr.open("POST", '{{ url_for("main.upload_file") }}');
+      xhr.send(formData);
+    });
+  }
+
+  // Upload complete
+  function uploadComplete() {
+    isUploading = false;
+    uploadStatus.textContent = "All uploads completed! 🎉";
+    overallProgressBar.style.width = "100%";
+
+    setTimeout(() => {
+      // Redirect to my files page
+      window.location.href = '{{ url_for("main.my_files") }}';
+    }, 2000);
+  }
+
+  // Format file size
+  function formatFileSize(bytes) {
+    if (bytes === 0) return "0 Bytes";
+    const k = 1024;
+    const sizes = ["Bytes", "KB", "MB", "GB"];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
+  }
+</script>
+{% endblock %}

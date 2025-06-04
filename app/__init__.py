@@ -15,12 +15,25 @@ def create_app(config_name=None):
 
     app = Flask(__name__)
 
-    # Load configuration
-    from config import config
-    app.config.from_object(config[config_name])
+    # Load configuration - fallback to basic config if config.py doesn't exist
+    try:
+        from config import config
+        app.config.from_object(config[config_name])
+    except ImportError:
+        # Fallback configuration if config.py doesn't exist
+        app.config['SECRET_KEY'] = os.environ.get(
+            'SECRET_KEY', 'dev-secret-key-change-in-production')
+        app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get(
+            'DATABASE_URL', 'sqlite:///app.db')
+        app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+        app.config['MAX_CONTENT_LENGTH'] = 16 * \
+            1024 * 1024  # 16MB max file size
+        app.config['UPLOAD_FOLDER'] = os.path.join(
+            app.instance_path, 'uploads')
 
-    # Ensure upload directory exists
-    upload_dir = app.config['UPLOAD_FOLDER']
+    # Ensure upload directory exists (for local fallback)
+    upload_dir = app.config.get(
+        'UPLOAD_FOLDER', os.path.join(app.instance_path, 'uploads'))
     if not os.path.exists(upload_dir):
         os.makedirs(upload_dir)
 
@@ -28,6 +41,16 @@ def create_app(config_name=None):
     from app.models import db
     db.init_app(app)
     login_manager.init_app(app)
+
+    # Initialize S3 storage if enabled
+    if app.config.get('USE_S3_STORAGE', False):
+        try:
+            from app.storage import init_storage
+            init_storage(app)
+            app.logger.info("S3 storage initialized")
+        except Exception as e:
+            app.logger.error(f"S3 storage initialization failed: {e}")
+            app.logger.info("Falling back to local storage")
 
     # Configure Flask-Login
     login_manager.login_view = 'main.login'
@@ -42,6 +65,20 @@ def create_app(config_name=None):
     # Register blueprints
     from app.routes import main
     app.register_blueprint(main)
+
+    # Error handlers
+    @app.errorhandler(404)
+    def not_found_error(error):
+        return "Page not found", 404
+
+    @app.errorhandler(500)
+    def internal_error(error):
+        db.session.rollback()
+        return "Internal server error", 500
+
+    @app.errorhandler(413)
+    def too_large(error):
+        return "File too large", 413
 
     # Create database tables
     with app.app_context():
@@ -59,5 +96,6 @@ def create_app(config_name=None):
             )
             db.session.add(admin)
             db.session.commit()
+            print("Created default admin user: admin/password")
 
     return app
