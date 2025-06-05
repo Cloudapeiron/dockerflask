@@ -1,4 +1,3 @@
-You're absolutely right! Here's the README content ready to paste directly into GitHub:
 Serverless File Upload App
 A modern, serverless file upload application built with Flask and deployed on AWS Lambda. Features secure JWT authentication, cloud storage, and a beautiful responsive UI.
 🚀 Architecture Evolution
