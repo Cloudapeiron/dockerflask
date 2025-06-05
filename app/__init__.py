@@ -1,10 +1,6 @@
 import os
 import logging
 from flask import Flask
-from flask_login import LoginManager
-
-# Don't import db here - we'll import it from models
-login_manager = LoginManager()
 
 
 def create_app(config_name=None):
@@ -31,16 +27,12 @@ def create_app(config_name=None):
         app.config['UPLOAD_FOLDER'] = os.path.join(
             app.instance_path, 'uploads')
 
-    # Ensure upload directory exists (for local fallback)
-    upload_dir = app.config.get(
-        'UPLOAD_FOLDER', os.path.join(app.instance_path, 'uploads'))
-    if not os.path.exists(upload_dir):
-        os.makedirs(upload_dir)
-
-    # Initialize extensions with app
-    from app.models import db
-    db.init_app(app)
-    login_manager.init_app(app)
+    # Only create upload directory if not in Lambda environment
+    if not os.environ.get('LAMBDA_ENVIRONMENT'):
+        upload_dir = app.config.get(
+            'UPLOAD_FOLDER', os.path.join(app.instance_path, 'uploads'))
+        if not os.path.exists(upload_dir):
+            os.makedirs(upload_dir)
 
     # Initialize S3 storage if enabled
     if app.config.get('USE_S3_STORAGE', False):
@@ -52,15 +44,15 @@ def create_app(config_name=None):
             app.logger.error(f"S3 storage initialization failed: {e}")
             app.logger.info("Falling back to local storage")
 
-    # Configure Flask-Login
-    login_manager.login_view = 'main.login'
-    login_manager.login_message = 'Please log in to access this page.'
-    login_manager.login_message_category = 'info'
-
-    @login_manager.user_loader
-    def load_user(user_id):
-        from app.models import User
-        return User.query.get(int(user_id))
+    # Initialize DynamoDB if enabled
+    if app.config.get('USE_DYNAMODB', False):
+        try:
+            from app.dynamodb_manager import init_dynamodb
+            init_dynamodb(app)
+            app.logger.info("DynamoDB initialized")
+        except Exception as e:
+            app.logger.error(f"DynamoDB initialization failed: {e}")
+            app.logger.info("Falling back to SQLite for metadata")
 
     # Register blueprints
     from app.routes import main
@@ -73,29 +65,10 @@ def create_app(config_name=None):
 
     @app.errorhandler(500)
     def internal_error(error):
-        db.session.rollback()
         return "Internal server error", 500
 
     @app.errorhandler(413)
     def too_large(error):
         return "File too large", 413
-
-    # Create database tables
-    with app.app_context():
-        db.create_all()
-
-        # Create default admin user if it doesn't exist
-        from app.models import User
-        from werkzeug.security import generate_password_hash
-
-        if not User.query.filter_by(username='admin').first():
-            admin = User(
-                username='admin',
-                email='admin@example.com',
-                password=generate_password_hash('password')
-            )
-            db.session.add(admin)
-            db.session.commit()
-            print("Created default admin user: admin/password")
 
     return app
