@@ -37,3 +37,5 @@ uploads/
 
 # Backups
 *.backup
+.env
+.env

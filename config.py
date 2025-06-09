@@ -10,24 +10,27 @@ def get_secret_from_parameter_store(parameter_name, region='us-west-1'):
         return response['Parameter']['Value']
     except Exception as e:
         print(f"Error fetching parameter {parameter_name}: {e}")
-        return None  # Return None instead of fallback
+        return None
 
 
 class Config:
     """Base configuration."""
+    # App name for Parameter Store paths
+    APP_NAME = os.environ.get('APP_NAME', 'your-app')
+
     # Get JWT secret key from Parameter Store, fallback to environment
     SECRET_KEY = (
-        get_secret_from_parameter_store('/dockerflask/jwt-secret-key') or
+        get_secret_from_parameter_store(f'/{APP_NAME}/jwt-secret-key') or
         os.environ.get('SECRET_KEY')
     )
 
     # Validate that we have a secret key
     if not SECRET_KEY:
         raise ValueError(
-            "SECRET_KEY must be set in Parameter Store (/dockerflask/jwt-secret-key) or environment variable")
+            f"SECRET_KEY must be set in Parameter Store (/{APP_NAME}/jwt-secret-key) or environment variable")
 
     SQLALCHEMY_TRACK_MODIFICATIONS = False
-    MAX_CONTENT_LENGTH = 16 * 1024 * 1024  # 16MB max file size
+    MAX_CONTENT_LENGTH = 1024 * 1024 * 1024  # 1GB max file size
     UPLOAD_FOLDER = os.environ.get('UPLOAD_FOLDER') or 'uploads'
 
     # S3 Configuration
@@ -35,13 +38,12 @@ class Config:
         'USE_S3_STORAGE', 'false').lower() == 'true'
     AWS_ACCESS_KEY_ID = os.environ.get('AWS_ACCESS_KEY_ID')
     AWS_SECRET_ACCESS_KEY = os.environ.get('AWS_SECRET_ACCESS_KEY')
-    AWS_REGION = os.environ.get('AWS_REGION', 'us-east-1')
+    AWS_REGION = os.environ.get('AWS_REGION', 'us-west-1')
     S3_BUCKET_NAME = os.environ.get('S3_BUCKET_NAME')
 
     # DynamoDB Configuration
     USE_DYNAMODB = os.environ.get('USE_DYNAMODB', 'false').lower() == 'true'
-    DYNAMODB_TABLE_NAME = os.environ.get(
-        'DYNAMODB_TABLE_NAME', 'flask-file-metadata')
+    DYNAMODB_TABLE_NAME = os.environ.get('DYNAMODB_TABLE_NAME', 'app-metadata')
 
 
 class DevelopmentConfig(Config):

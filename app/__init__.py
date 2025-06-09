@@ -20,8 +20,11 @@ def create_app(config_name=None):
     logging.basicConfig(level=getattr(logging, log_level))
 
     # Load configuration from environment variables (now loaded from .env)
-    app.config['SECRET_KEY'] = os.environ.get(
-        'SECRET_KEY', 'dev-secret-key-change-in-production')
+    app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY')
+    if not app.config['SECRET_KEY']:
+        raise ValueError(
+            "SECRET_KEY must be set in environment variables or Parameter Store")
+
     app.config['FLASK_ENV'] = os.environ.get('FLASK_ENV', 'development')
     app.config['DEBUG'] = os.environ.get(
         'FLASK_DEBUG', 'false').lower() == 'true'
@@ -31,9 +34,9 @@ def create_app(config_name=None):
         'DATABASE_URL', 'sqlite:///app.db')
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-    # File upload configuration
+    # File upload configuration - 1GB limit
     app.config['MAX_CONTENT_LENGTH'] = int(
-        os.environ.get('MAX_CONTENT_LENGTH', 16 * 1024 * 1024))
+        os.environ.get('MAX_CONTENT_LENGTH', 1024 * 1024 * 1024))
     app.config['UPLOAD_FOLDER'] = os.environ.get(
         'UPLOAD_FOLDER', os.path.join(app.instance_path, 'uploads'))
 
@@ -41,10 +44,10 @@ def create_app(config_name=None):
     app.config['AWS_ACCESS_KEY_ID'] = os.environ.get('AWS_ACCESS_KEY_ID')
     app.config['AWS_SECRET_ACCESS_KEY'] = os.environ.get(
         'AWS_SECRET_ACCESS_KEY')
-    app.config['AWS_REGION'] = os.environ.get('AWS_REGION', 'us-east-1')
+    app.config['AWS_REGION'] = os.environ.get('AWS_REGION', 'us-west-1')
     app.config['S3_BUCKET_NAME'] = os.environ.get('S3_BUCKET_NAME')
     app.config['DYNAMODB_TABLE_NAME'] = os.environ.get(
-        'DYNAMODB_TABLE_NAME', 'flask-file-metadata')
+        'DYNAMODB_TABLE_NAME', 'app-metadata')
 
     # Feature flags
     app.config['USE_S3_STORAGE'] = os.environ.get(

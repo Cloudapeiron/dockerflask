@@ -26,11 +26,11 @@ class DynamoDBManager:
                 'dynamodb',
                 aws_access_key_id=os.environ.get('AWS_ACCESS_KEY_ID'),
                 aws_secret_access_key=os.environ.get('AWS_SECRET_ACCESS_KEY'),
-                region_name=os.environ.get('AWS_REGION', 'us-east-1')
+                region_name=os.environ.get('AWS_REGION', 'us-west-1')
             )
 
             self.table_name = os.environ.get(
-                'DYNAMODB_TABLE_NAME', 'flask-file-metadata')
+                'DYNAMODB_TABLE_NAME', 'app-metadata')
 
             # Get or create table
             self.table = self._get_or_create_table()

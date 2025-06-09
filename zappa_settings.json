@@ -3,20 +3,15 @@
       "app_function": "lambda_function.app",
       "aws_region": "us-west-1",
       "profile_name": "default",
-      "project_name": "flask-file-app-dev",
+      "project_name": "your-app-dev",
       "runtime": "python3.11",
-      "s3_bucket": "flask-app-lambda-deployments-dev",
+      "s3_bucket": "your-zappa-deployments-bucket",
       "environment_variables": {
           "AWS_REGION": "us-west-1",
           "USE_S3_STORAGE": "true",
           "USE_DYNAMODB": "true",
-          "DYNAMODB_TABLE_NAME": "flask-file-metadata",
-          "S3_BUCKET_NAME": "your-flask-uploads",
-          "SECRET_KEY": "lambda-temp-secret-key-for-testing",
+          "APP_NAME": "your-app",
           "LAMBDA_ENVIRONMENT": "true"
-      },
-      "aws_environment_variables": {
-          "SECRET_KEY_PARAMETER": "/flask-app/secret-key"
       },
       "timeout_seconds": 30,
       "memory_size": 512,
