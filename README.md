@@ -299,7 +299,7 @@ curl -X GET https://your-api-endpoint/development/api/file-info
 ### Test Authentication
 ```bash
 # Login
-curl -X POST https://your-api-url/development/api/login \
+curl -X POST https://your-api-endpoint/development/api/login \
   -H "Content-Type: application/json" \
   -d '{"username": "admin", "password": "password"}'
 ```
