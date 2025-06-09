@@ -10,18 +10,21 @@ def get_secret_from_parameter_store(parameter_name, region='us-west-1'):
         return response['Parameter']['Value']
     except Exception as e:
         print(f"Error fetching parameter {parameter_name}: {e}")
-        return 'fallback-secret-key'
+        return None  # Return None instead of fallback
 
 
 class Config:
     """Base configuration."""
-    # Get secret key from Parameter Store if available, otherwise use environment or default
-    SECRET_KEY_PARAMETER = os.environ.get('SECRET_KEY_PARAMETER')
-    if SECRET_KEY_PARAMETER:
-        SECRET_KEY = get_secret_from_parameter_store(SECRET_KEY_PARAMETER)
-    else:
-        SECRET_KEY = os.environ.get(
-            'SECRET_KEY') or 'dev-secret-key-change-in-production'
+    # Get JWT secret key from Parameter Store, fallback to environment
+    SECRET_KEY = (
+        get_secret_from_parameter_store('/dockerflask/jwt-secret-key') or
+        os.environ.get('SECRET_KEY')
+    )
+
+    # Validate that we have a secret key
+    if not SECRET_KEY:
+        raise ValueError(
+            "SECRET_KEY must be set in Parameter Store (/dockerflask/jwt-secret-key) or environment variable")
 
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     MAX_CONTENT_LENGTH = 16 * 1024 * 1024  # 16MB max file size
