@@ -65,11 +65,9 @@ The separation of concerns allows:
 
 ## 🌐 Live Application
 
-**Production URL**: https://0ufbqvfkaj.execute-api.us-west-1.amazonaws.com/development/
+**Production URL**: Demo environment available - contact for access
 
-**Default Credentials**:
-- Username: `admin`
-- Password: `password`
+**Demo Access**: Contact administrator for demo credentials
 
 ## 📁 Project Structure
 
@@ -100,15 +98,15 @@ Store your secrets securely in AWS Parameter Store:
 ```bash
 # JWT Secret Key (Required)
 aws ssm put-parameter \
-    --name "/dockerflask/jwt-secret-key" \
+    --name "/your-app/jwt-secret-key" \
     --value "your-secure-64-character-secret" \
     --type "SecureString" \
     --region us-west-1
 
 # S3 Bucket Name
 aws ssm put-parameter \
-    --name "/dockerflask/s3-bucket-name" \
-    --value "your-flask-uploads" \
+    --name "/your-app/s3-bucket-name" \
+    --value "your-unique-bucket-name" \
     --type "String" \
     --region us-west-1
 ```
@@ -117,18 +115,18 @@ aws ssm put-parameter \
 | Variable | Description | Default |
 |----------|-------------|---------|
 | AWS_REGION | AWS region for services | us-west-1 |
-| S3_BUCKET_NAME | S3 bucket for file storage | your-flask-uploads |
-| DYNAMODB_TABLE_NAME | DynamoDB table name | flask-file-metadata |
+| S3_BUCKET_NAME | S3 bucket for file storage | Set via Parameter Store |
+| DYNAMODB_TABLE_NAME | DynamoDB table name | your-app-metadata |
 | USE_S3_STORAGE | Enable S3 storage | true |
 | USE_DYNAMODB | Enable DynamoDB | true |
 | LAMBDA_ENVIRONMENT | Lambda environment flag | true |
 
 ### AWS Resources
-- **S3 Bucket**: `your-flask-uploads` (us-west-1)
-- **DynamoDB Table**: `flask-file-metadata` (auto-created)
-- **Lambda Function**: `flask-file-app-dev-development` 
+- **S3 Bucket**: Configured via Parameter Store
+- **DynamoDB Table**: Configured during deployment
+- **Lambda Function**: Auto-generated during Zappa deployment
 - **API Gateway**: Auto-generated endpoint
-- **Parameter Store**: Encrypted secret storage in `/dockerflask/` namespace
+- **Parameter Store**: Encrypted secret storage in `/your-app/` namespace
 
 ## 🚦 Getting Started
 
@@ -164,14 +162,14 @@ python -c "import secrets; print(secrets.token_hex(32))"
 
 # Store in Parameter Store
 aws ssm put-parameter \
-    --name "/dockerflask/jwt-secret-key" \
+    --name "/your-app/jwt-secret-key" \
     --value "YOUR_GENERATED_SECRET" \
     --type "SecureString"
 ```
 
 6. **Create S3 bucket**
 ```bash
-aws s3 mb s3://your-flask-uploads --region us-west-1
+aws s3 mb s3://your-unique-bucket-name --region us-west-1
 ```
 
 7. **Deploy to AWS**
@@ -211,7 +209,7 @@ python debug_app.py
 ### Check Upload Limits
 ```bash
 # Test file info endpoint
-curl -X GET https://your-api-url/development/api/file-info
+curl -X GET https://your-api-endpoint/development/api/file-info
 
 # Response includes:
 {
@@ -253,7 +251,7 @@ zappa undeploy development
 ### How It Works
 ```python
 # The app automatically checks Parameter Store first, then environment variables
-SECRET_KEY = get_secret_from_parameter_store('/dockerflask/jwt-secret-key') or os.environ.get('SECRET_KEY')
+SECRET_KEY = get_secret_from_parameter_store('/your-app/jwt-secret-key') or os.environ.get('SECRET_KEY')
 
 # Fail-safe: App won't start without a valid secret key
 if not SECRET_KEY:
@@ -292,10 +290,10 @@ if not SECRET_KEY:
 # Test with a large file
 curl -X POST -F "file=@path/to/large-video.mp4" \
   -H "Authorization: Bearer YOUR_JWT_TOKEN" \
-  https://your-api-url/development/api/upload
+  https://your-api-endpoint/development/api/upload
 
 # Check file info
-curl -X GET https://your-api-url/development/api/file-info
+curl -X GET https://your-api-endpoint/development/api/file-info
 ```
 
 ### Test Authentication
@@ -328,7 +326,7 @@ curl -X POST https://your-api-url/development/api/login \
 - **Fault Tolerance**: Failed AI processing doesn't affect file storage and management
 
 ### Parameter Store Issues
-- **"SECRET_KEY not found"**: `aws ssm get-parameter --name "/dockerflask/jwt-secret-key"`
+- **"SECRET_KEY not found"**: `aws ssm get-parameter --name "/your-app/jwt-secret-key"`
 - **"Access Denied"**: Check IAM permissions for Parameter Store
 - **"Wrong Region"**: Ensure secrets are in `us-west-1`
 
