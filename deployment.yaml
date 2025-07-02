@@ -1,0 +1,140 @@
+# deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: flask-app
+  labels:
+    app: flask-app
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: flask-app
+  template:
+    metadata:
+      labels:
+        app: flask-app
+    spec:
+      containers:
+      - name: flask-app
+        image: flask-app:latest
+        imagePullPolicy: Never  # Use local image
+        ports:
+        - containerPort: 5000
+        env:
+        - name: FLASK_ENV
+          value: "production"
+        - name: FLASK_APP
+          value: "debug_app.py"
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 5000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 5000
+          initialDelaySeconds: 5
+          periodSeconds: 5
+        volumeMounts:
+        - name: config-volume
+          mountPath: /app/config
+        - name: upload-storage
+          mountPath: /app/uploads
+      volumes:
+      - name: config-volume
+        configMap:
+          name: flask-config
+      - name: upload-storage
+        persistentVolumeClaim:
+          claimName: flask-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: flask-service
+  labels:
+    app: flask-app
+spec:
+  type: NodePort
+  ports:
+  - port: 80
+    targetPort: 5000
+    nodePort: 30080
+  selector:
+    app: flask-app
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: flask-config
+data:
+  config.py: |
+    import os
+    
+    class Config:
+        SECRET_KEY = os.environ.get('SECRET_KEY') or 'dev-secret-key'
+        UPLOAD_FOLDER = '/app/uploads'
+        MAX_CONTENT_LENGTH = 16 * 1024 * 1024  # 16MB max file size
+        
+    class ProductionConfig(Config):
+        DEBUG = False
+        
+    class DevelopmentConfig(Config):
+        DEBUG = True
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: flask-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: flask-secrets
+type: Opaque
+data:
+  secret-key: Zmxhc2stc2VjcmV0LWtleS1mb3ItcHJvZHVjdGlvbg==  # base64 encoded
+  # Add your AWS credentials here if needed
+  # aws-access-key-id: <base64-encoded-key>
+  # aws-secret-access-key: <base64-encoded-secret>
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: flask-hpa
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: flask-app
+  minReplicas: 2
+  maxReplicas: 10
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 80

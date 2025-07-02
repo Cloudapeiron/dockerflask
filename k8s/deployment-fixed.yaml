@@ -1,0 +1,42 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: flask-upload-app-fixed
+  namespace: flask-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: flask-upload-app-fixed
+  template:
+    metadata:
+      labels:
+        app: flask-upload-app-fixed
+    spec:
+      containers:
+      - name: flask-app
+        image: flask-upload-app:latest
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 5000
+        env:
+        - name: SECRET_KEY
+          value: "flask-dev-secret-key-12345"
+        - name: AWS_ACCESS_KEY_ID
+          value: "AKIAWZE7GYUMLPTLVCDF"
+        - name: AWS_SECRET_ACCESS_KEY
+          value: "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"
+        - name: AWS_REGION
+          value: "us-west-1"
+        - name: USE_S3_STORAGE
+          value: "true"
+        - name: S3_BUCKET_NAME
+          value: "your-flask-uploads"
+        - name: USE_DYNAMODB
+          value: "true"
+        - name: DYNAMODB_TABLE_NAME
+          value: "app-metadata"
+        - name: APP_NAME
+          value: "your-app"
+        - name: FLASK_ENV
+          value: "development"

@@ -1,0 +1,24 @@
+# Virtual environments
+flask-lambda-env/
+venv/
+env/
+.venv/
+
+# Lambda deployment files
+lambda-deploy/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+
+# Other
+*.zip
+*.tar.gz
+*.log
+.env
+.DS_Store
+*.sqlite
+*.db
+.git/objects/pack/

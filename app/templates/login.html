@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Login - AI File Processing Platform</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          sans-serif;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+      }
+
+      .login-container {
+        background: white;
+        border-radius: 20px;
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        overflow: hidden;
+        width: 100%;
+        max-width: 450px;
+        animation: fadeInUp 0.6s ease;
+      }
+
+      .login-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 40px 30px;
+        text-align: center;
+      }
+
+      .login-header h1 {
+        font-size: 2.2rem;
+        margin-bottom: 10px;
+        font-weight: 600;
+      }
+
+      .login-header p {
+        opacity: 0.9;
+        font-size: 1rem;
+      }
+
+      .login-form {
+        padding: 40px 30px;
+      }
+
+      .form-group {
+        margin-bottom: 25px;
+        position: relative;
+      }
+
+      .form-input {
+        width: 100%;
+        padding: 15px 20px;
+        border: 2px solid #e2e8f0;
+        border-radius: 12px;
+        font-size: 1rem;
+        transition: all 0.3s ease;
+        background: #f8f9ff;
+      }
+
+      .form-input:focus {
+        outline: none;
+        border-color: #667eea;
+        background: white;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        transform: translateY(-1px);
+      }
+
+      .form-input::placeholder {
+        color: #a0aec0;
+      }
+
+      .login-btn {
+        width: 100%;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 15px;
+        border: none;
+        border-radius: 12px;
+        font-size: 1.1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        margin-bottom: 20px;
+      }
+
+      .login-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+      }
+
+      .login-btn:active {
+        transform: translateY(0);
+      }
+
+      .flash-messages {
+        margin-bottom: 20px;
+      }
+
+      .alert {
+        padding: 15px 20px;
+        border-radius: 10px;
+        margin-bottom: 15px;
+        font-weight: 500;
+        animation: slideDown 0.3s ease;
+      }
+
+      .alert-success {
+        background: linear-gradient(135deg, #68d391 0%, #48bb78 100%);
+        color: white;
+      }
+
+      .alert-error {
+        background: linear-gradient(135deg, #fc8181 0%, #e53e3e 100%);
+        color: white;
+      }
+
+      .register-link {
+        text-align: center;
+        margin-top: 20px;
+        padding-top: 20px;
+        border-top: 1px solid #e2e8f0;
+      }
+
+      .register-link a {
+        color: #667eea;
+        text-decoration: none;
+        font-weight: 500;
+        transition: color 0.3s ease;
+      }
+
+      .register-link a:hover {
+        color: #5a67d8;
+      }
+
+      .demo-credentials {
+        background: #f0f4ff;
+        border: 1px solid #d6e7ff;
+        border-radius: 10px;
+        padding: 15px;
+        margin-bottom: 20px;
+        font-size: 0.9rem;
+        color: #4a5568;
+      }
+
+      .demo-credentials h4 {
+        color: #667eea;
+        margin-bottom: 8px;
+        font-size: 0.9rem;
+      }
+
+      .platform-features {
+        background: linear-gradient(135deg, #ffd89b 0%, #19547b 100%);
+        color: white;
+        padding: 20px;
+        border-radius: 12px;
+        margin-top: 20px;
+      }
+
+      .platform-features h4 {
+        margin-bottom: 12px;
+        font-size: 1rem;
+      }
+
+      .platform-features ul {
+        list-style: none;
+        font-size: 0.9rem;
+      }
+
+      .platform-features li {
+        margin-bottom: 6px;
+        padding-left: 15px;
+        position: relative;
+      }
+
+      .platform-features li:before {
+        content: "🚀";
+        position: absolute;
+        left: 0;
+      }
+
+      @keyframes fadeInUp {
+        from {
+          opacity: 0;
+          transform: translateY(30px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      @keyframes slideDown {
+        from {
+          opacity: 0;
+          transform: translateY(-10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .loading {
+        display: none;
+        text-align: center;
+        color: #667eea;
+      }
+
+      .loading-spinner {
+        display: inline-block;
+        width: 20px;
+        height: 20px;
+        border: 2px solid #e2e8f0;
+        border-radius: 50%;
+        border-top-color: #667eea;
+        animation: spin 1s ease-in-out infinite;
+        margin-right: 10px;
+      }
+
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+
+      @media (max-width: 480px) {
+        .login-container {
+          margin: 10px;
+        }
+
+        .login-header {
+          padding: 30px 20px;
+        }
+
+        .login-header h1 {
+          font-size: 1.8rem;
+        }
+
+        .login-form {
+          padding: 30px 20px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="login-container">
+      <div class="login-header">
+        <h1>🤖 AI Platform</h1>
+        <p>Secure file processing and AI analysis</p>
+      </div>
+
+      <div class="login-form">
+        <!-- Flash Messages -->
+        <div class="flash-messages">
+          {% with messages = get_flashed_messages(with_categories=true) %} {% if
+          messages %} {% for category, message in messages %}
+          <div
+            class="alert alert-{{ 'error' if category == 'error' else 'success' }}"
+          >
+            {{ message }}
+          </div>
+          {% endfor %} {% endif %} {% endwith %}
+        </div>
+
+        <!-- Demo Credentials Info -->
+        <div class="demo-credentials">
+          <h4>🔐 Demo Access</h4>
+          <p>Contact administrator for demo credentials</p>
+        </div>
+
+        <form method="POST" id="loginForm">
+          <div class="form-group">
+            <input
+              type="text"
+              name="username"
+              class="form-input"
+              placeholder="👤 Username"
+              required
+            />
+          </div>
+
+          <div class="form-group">
+            <input
+              type="password"
+              name="password"
+              class="form-input"
+              placeholder="🔒 Password"
+              required
+            />
+          </div>
+
+          <button type="submit" class="login-btn" id="loginBtn">
+            <span class="btn-text">Sign In to Platform</span>
+            <div class="loading" id="loading">
+              <span class="loading-spinner"></span>Signing in...
+            </div>
+          </button>
+        </form>
+
+        <div class="register-link">
+          <p>
+            Need an account?
+            <a href="{{ url_for('main.register') if url_for else '#' }}"
+              >Create Account</a
+            >
+          </p>
+        </div>
+
+        <div class="platform-features">
+          <h4>🎯 Platform Capabilities</h4>
+          <ul>
+            <li>1GB file upload support</li>
+            <li>Video & audio processing</li>
+            <li>Secure AWS infrastructure</li>
+            <li>Real-time progress tracking</li>
+            <li>AI-powered analysis</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      document
+        .getElementById("loginForm")
+        .addEventListener("submit", function (e) {
+          const btn = document.getElementById("loginBtn");
+          const btnText = btn.querySelector(".btn-text");
+          const loading = document.getElementById("loading");
+
+          // Show loading state
+          btnText.style.display = "none";
+          loading.style.display = "block";
+          btn.disabled = true;
+
+          // If login fails, restore button (this would be handled by server redirect)
+          setTimeout(() => {
+            if (window.location.href === window.location.href) {
+              btnText.style.display = "block";
+              loading.style.display = "none";
+              btn.disabled = false;
+            }
+          }, 5000);
+        });
+
+      // Add some interactive feedback
+      const inputs = document.querySelectorAll(".form-input");
+      inputs.forEach((input) => {
+        input.addEventListener("focus", function () {
+          this.parentElement.style.transform = "translateY(-2px)";
+        });
+
+        input.addEventListener("blur", function () {
+          this.parentElement.style.transform = "translateY(0)";
+        });
+      });
+    </script>
+  </body>
+</html>

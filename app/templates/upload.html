@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Upload Files - {{ user.username }}</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          sans-serif;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        padding: 20px;
+      }
+
+      .container {
+        max-width: none !important;
+        width: 98% !important;
+        margin: 0 auto;
+        background: white;
+        border-radius: 20px;
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        overflow: hidden;
+        animation: fadeInUp 0.6s ease;
+      }
+
+      .header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 30px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+      }
+
+      .header h1 {
+        font-size: 2.5rem;
+        display: flex;
+        align-items: center;
+        gap: 15px;
+      }
+
+      .header-actions {
+        display: flex;
+        gap: 15px;
+        flex-wrap: wrap;
+      }
+
+      .nav-btn {
+        background: rgba(255, 255, 255, 0.2);
+        color: white;
+        padding: 12px 25px;
+        text-decoration: none;
+        border-radius: 50px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        border: 2px solid rgba(255, 255, 255, 0.3);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .nav-btn:hover {
+        background: rgba(255, 255, 255, 0.3);
+        transform: translateY(-2px);
+      }
+
+      .content {
+        padding: 30px !important;
+        text-align: center;
+      }
+
+      /* NICELY SIZED UPLOAD AREA - Still larger than macOS dialog but balanced */
+      .upload-area {
+        border: 3px dashed #667eea !important;
+        border-radius: 20px !important;
+        /* Comfortable padding and dimensions - slightly wider and taller */
+        padding: 100px 80px !important;
+        margin: 20px auto !important;
+        width: 90% !important;
+        max-width: 800px !important;
+        min-height: 350px !important;
+        transition: all 0.3s ease;
+        background: #f8f9ff !important;
+        position: relative;
+        overflow: hidden;
+        cursor: pointer;
+      }
+
+      .upload-area:hover,
+      .upload-area.dragover {
+        border-color: #48bb78 !important;
+        background: linear-gradient(
+          135deg,
+          rgba(72, 187, 120, 0.1) 0%,
+          rgba(56, 161, 105, 0.1) 100%
+        ) !important;
+        transform: scale(1.02) !important;
+        box-shadow: 0 20px 40px rgba(72, 187, 120, 0.3) !important;
+      }
+
+      .upload-icon {
+        font-size: 4rem !important;
+        margin-bottom: 20px !important;
+        display: block;
+        color: #667eea;
+        animation: float 3s ease-in-out infinite;
+      }
+
+      .upload-text h3 {
+        font-size: 1.6rem !important;
+        color: #2d3748;
+        margin-bottom: 12px !important;
+      }
+
+      .upload-text p {
+        color: #718096;
+        font-size: 1.1rem !important;
+        margin-bottom: 25px !important;
+      }
+
+      .file-input-wrapper {
+        position: relative;
+        display: inline-block;
+      }
+
+      .file-input {
+        position: absolute;
+        left: -9999px;
+        opacity: 0;
+      }
+
+      .file-input-label {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 16px 32px !important;
+        border-radius: 50px;
+        cursor: pointer;
+        font-weight: 600;
+        font-size: 1.15rem !important;
+        transition: all 0.3s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+      }
+
+      .file-input-label:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 12px 35px rgba(102, 126, 234, 0.6);
+      }
+
+      .selected-file {
+        margin-top: 30px !important;
+        padding: 20px !important;
+        background: #e6fffa;
+        border: 3px solid #81e6d9;
+        border-radius: 15px;
+        color: #234e52;
+        font-weight: 600;
+        font-size: 1.2rem !important;
+        display: none;
+      }
+
+      .upload-btn {
+        background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+        color: white;
+        border: none;
+        padding: 20px 50px !important;
+        border-radius: 50px;
+        font-size: 1.3rem !important;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        margin-top: 30px !important;
+        box-shadow: 0 8px 25px rgba(72, 187, 120, 0.4);
+        display: none;
+      }
+
+      .upload-btn:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 12px 35px rgba(72, 187, 120, 0.6);
+      }
+
+      /* Full-screen drop overlay for anywhere on screen */
+      .full-screen-drop-zone {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background: rgba(102, 126, 234, 0.1);
+        border: 8px dashed #667eea;
+        z-index: 1000;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        backdrop-filter: blur(2px);
+      }
+
+      .full-screen-drop-zone.active {
+        display: flex;
+      }
+
+      .full-screen-drop-message {
+        background: white;
+        padding: 80px;
+        border-radius: 30px;
+        box-shadow: 0 30px 60px rgba(0, 0, 0, 0.3);
+        text-align: center;
+        border: 6px dashed #667eea;
+      }
+
+      .full-screen-drop-message .drop-icon {
+        font-size: 8rem;
+        margin-bottom: 20px;
+        animation: bounce 1.5s infinite;
+      }
+
+      .full-screen-drop-message .drop-text {
+        font-size: 3rem;
+        color: #667eea;
+        font-weight: bold;
+        margin-bottom: 15px;
+      }
+
+      .full-screen-drop-message .drop-subtext {
+        font-size: 1.5rem;
+        color: #718096;
+      }
+
+      .flash-messages {
+        margin-bottom: 20px;
+      }
+
+      .alert {
+        padding: 15px 20px;
+        border-radius: 10px;
+        margin-bottom: 15px;
+        font-weight: 500;
+        animation: slideDown 0.3s ease;
+      }
+
+      .alert-success {
+        background: linear-gradient(135deg, #68d391 0%, #48bb78 100%);
+        color: white;
+      }
+
+      .alert-error {
+        background: linear-gradient(135deg, #fc8181 0%, #e53e3e 100%);
+        color: white;
+      }
+
+      .features {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 20px;
+        margin-top: 40px;
+        text-align: left;
+      }
+
+      .feature {
+        padding: 20px;
+        border-radius: 15px;
+        background: #f7fafc;
+        border: 2px solid #e2e8f0;
+        transition: all 0.3s ease;
+      }
+
+      .feature:hover {
+        border-color: #667eea;
+        transform: translateY(-2px);
+      }
+
+      .feature-icon {
+        font-size: 2rem;
+        margin-bottom: 10px;
+        display: block;
+      }
+
+      .feature h4 {
+        color: #2d3748;
+        margin-bottom: 5px;
+      }
+
+      .feature p {
+        color: #718096;
+        font-size: 0.9rem;
+      }
+
+      @keyframes fadeInUp {
+        from {
+          opacity: 0;
+          transform: translateY(30px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      @keyframes slideDown {
+        from {
+          opacity: 0;
+          transform: translateY(-10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      @keyframes float {
+        0%,
+        100% {
+          transform: translateY(0px);
+        }
+        50% {
+          transform: translateY(-15px);
+        }
+      }
+
+      @keyframes bounce {
+        0%,
+        20%,
+        50%,
+        80%,
+        100% {
+          transform: translateY(0);
+        }
+        40% {
+          transform: translateY(-15px);
+        }
+        60% {
+          transform: translateY(-8px);
+        }
+      }
+
+      @media (max-width: 768px) {
+        .header {
+          flex-direction: column;
+          gap: 20px;
+          text-align: center;
+        }
+
+        .header h1 {
+          font-size: 2rem;
+        }
+
+        .content {
+          padding: 20px !important;
+        }
+
+        .upload-area {
+          padding: 80px 30px !important;
+          min-height: 280px !important;
+        }
+
+        .upload-icon {
+          font-size: 3rem !important;
+        }
+
+        .upload-text h3 {
+          font-size: 1.4rem !important;
+        }
+
+        .upload-text p {
+          font-size: 1rem !important;
+        }
+
+        .features {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="header">
+        <h1>📁 Upload Files</h1>
+        <div class="header-actions">
+          <a href="{{ url_for('main.files') }}" class="nav-btn">
+            📂 My Files
+          </a>
+          <a href="{{ url_for('main.logout') }}" class="nav-btn"> 🚪 Logout </a>
+        </div>
+      </div>
+
+      <div class="content">
+        <!-- Flash Messages -->
+        <div class="flash-messages">
+          {% with messages = get_flashed_messages(with_categories=true) %} {% if
+          messages %} {% for category, message in messages %}
+          <div
+            class="alert alert-{{ 'error' if category == 'error' else 'success' }}"
+          >
+            {{ message }}
+          </div>
+          {% endfor %} {% endif %} {% endwith %}
+        </div>
+
+        <p
+          style="
+            color: #718096;
+            font-size: 1.3rem;
+            margin-bottom: 30px;
+            font-weight: 500;
+          "
+        >
+          Welcome back, <strong>{{ user.username }}</strong>! Upload your files
+          securely to AWS S3.
+        </p>
+
+        <form method="POST" enctype="multipart/form-data" id="uploadForm">
+          <div class="upload-area" id="uploadArea">
+            <span class="upload-icon">☁️</span>
+            <div class="upload-text">
+              <h3>Drag & Drop Your File Here</h3>
+              <p>Or click below to browse and select a file</p>
+              <p
+                style="
+                  font-size: 1.2rem;
+                  color: #48bb78;
+                  font-weight: 600;
+                  margin-top: 15px;
+                "
+              >
+                🎯 MASSIVE drop zone - larger than any file dialog! Drop
+                anywhere on screen!
+              </p>
+            </div>
+
+            <div class="file-input-wrapper">
+              <input
+                type="file"
+                name="file"
+                id="fileInput"
+                class="file-input"
+                required
+              />
+              <label for="fileInput" class="file-input-label">
+                📂 Choose File
+              </label>
+            </div>
+
+            <div class="selected-file" id="selectedFile"></div>
+            <button type="submit" class="upload-btn" id="uploadBtn">
+              🚀 Upload to S3
+            </button>
+          </div>
+        </form>
+
+        <div class="features">
+          <div class="feature">
+            <span class="feature-icon">🔒</span>
+            <h4>Secure Storage</h4>
+            <p>Files encrypted and stored safely in AWS S3</p>
+          </div>
+          <div class="feature">
+            <span class="feature-icon">⚡</span>
+            <h4>Fast Upload</h4>
+            <p>Direct upload to cloud storage for speed</p>
+          </div>
+          <div class="feature">
+            <span class="feature-icon">📊</span>
+            <h4>Smart Metadata</h4>
+            <p>File information stored in DynamoDB</p>
+          </div>
+          <div class="feature">
+            <span class="feature-icon">🎯</span>
+            <h4>Enhanced Drop Zone</h4>
+            <p>Massive upload area - drop files anywhere on screen!</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Full-screen drop overlay -->
+    <div class="full-screen-drop-zone" id="fullScreenDropZone">
+      <div class="full-screen-drop-message">
+        <span class="drop-icon">🎯</span>
+        <div class="drop-text">Drop anywhere!</div>
+        <div class="drop-subtext">Release to upload your file</div>
+      </div>
+    </div>
+
+    <script>
+      // Prevent browser from opening dropped files globally
+      document.addEventListener("dragover", (e) => e.preventDefault(), false);
+      document.addEventListener("drop", (e) => e.preventDefault(), false);
+
+      const fileInput = document.getElementById("fileInput");
+      const selectedFile = document.getElementById("selectedFile");
+      const uploadBtn = document.getElementById("uploadBtn");
+      const uploadArea = document.getElementById("uploadArea");
+      const fullScreenDropZone = document.getElementById("fullScreenDropZone");
+      let dragCounter = 0;
+
+      function handleFileSelection(file) {
+        if (file) {
+          selectedFile.textContent = `Selected: ${file.name} (${(
+            file.size /
+            1024 /
+            1024
+          ).toFixed(1)} MB)`;
+          selectedFile.style.display = "block";
+          uploadBtn.style.display = "inline-block";
+
+          // Scroll to upload button
+          uploadBtn.scrollIntoView({ behavior: "smooth", block: "center" });
+        }
+      }
+
+      fileInput.addEventListener("change", function (e) {
+        const file = e.target.files[0];
+        handleFileSelection(file);
+      });
+
+      // Enhanced drag and drop functionality for full screen
+      document.addEventListener("dragenter", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        dragCounter++;
+
+        if (dragCounter === 1) {
+          fullScreenDropZone.classList.add("active");
+          uploadArea.classList.add("dragover");
+        }
+      });
+
+      document.addEventListener("dragleave", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        dragCounter--;
+
+        if (dragCounter === 0) {
+          fullScreenDropZone.classList.remove("active");
+          uploadArea.classList.remove("dragover");
+        }
+      });
+
+      document.addEventListener("dragover", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+      });
+
+      document.addEventListener("drop", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        dragCounter = 0;
+
+        fullScreenDropZone.classList.remove("active");
+        uploadArea.classList.remove("dragover");
+
+        const files = e.dataTransfer.files;
+        if (files.length > 0) {
+          fileInput.files = files;
+          const file = files[0];
+          handleFileSelection(file);
+        }
+      });
+
+      // Click anywhere on upload area to open file dialog
+      uploadArea.addEventListener("click", (e) => {
+        if (
+          e.target !== fileInput &&
+          !e.target.closest(".file-input-label") &&
+          !e.target.closest(".upload-btn")
+        ) {
+          fileInput.click();
+        }
+      });
+    </script>
+  </body>
+</html>

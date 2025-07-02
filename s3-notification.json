@@ -1,0 +1,19 @@
+{
+  "LambdaFunctionConfigurations": [
+    {
+      "Id": "file-processor-trigger",
+      "LambdaFunctionArn": "arn:aws:lambda:us-west-1:466337842456:function:flask-file-app-dev-development",
+      "Events": ["s3:ObjectCreated:*"],
+      "Filter": {
+        "Key": {
+          "FilterRules": [
+            {
+              "Name": "prefix",
+              "Value": "user-1/uploads_raw_"
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

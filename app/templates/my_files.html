@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>My Files - {{ user.username }}</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          sans-serif;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        padding: 20px;
+      }
+
+      .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        background: white;
+        border-radius: 20px;
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        overflow: hidden;
+        animation: fadeInUp 0.6s ease;
+      }
+
+      .header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 30px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+      }
+
+      .header h1 {
+        font-size: 2.5rem;
+        display: flex;
+        align-items: center;
+        gap: 15px;
+      }
+
+      .header-actions {
+        display: flex;
+        gap: 15px;
+        flex-wrap: wrap;
+      }
+
+      .upload-btn,
+      .dashboard-btn {
+        background: rgba(255, 255, 255, 0.2);
+        color: white;
+        padding: 12px 25px;
+        text-decoration: none;
+        border-radius: 50px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        border: 2px solid rgba(255, 255, 255, 0.3);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .upload-btn:hover,
+      .dashboard-btn:hover {
+        background: rgba(255, 255, 255, 0.3);
+        transform: translateY(-2px);
+      }
+
+      .content {
+        padding: 40px;
+      }
+
+      .stats {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 20px;
+        margin-bottom: 30px;
+      }
+
+      .stat-card {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 25px;
+        border-radius: 15px;
+        text-align: center;
+        box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+      }
+
+      .stat-card h3 {
+        font-size: 2rem;
+        margin-bottom: 5px;
+      }
+
+      .stat-card p {
+        opacity: 0.9;
+      }
+
+      .files-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+        gap: 25px;
+        margin-top: 30px;
+      }
+
+      .file-card {
+        background: white;
+        border-radius: 15px;
+        padding: 25px;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+        transition: all 0.3s ease;
+        border: 2px solid #f7fafc;
+        animation: fadeInUp 0.6s ease forwards;
+      }
+
+      .file-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+        border-color: #667eea;
+      }
+
+      .file-header {
+        display: flex;
+        align-items: center;
+        margin-bottom: 15px;
+      }
+
+      .file-icon {
+        font-size: 2.5rem;
+        margin-right: 15px;
+      }
+
+      .file-info h3 {
+        color: #2d3748;
+        font-size: 1.1rem;
+        margin-bottom: 5px;
+        word-break: break-word;
+      }
+
+      .file-meta {
+        color: #718096;
+        font-size: 0.9rem;
+        margin-bottom: 20px;
+        line-height: 1.4;
+      }
+
+      .file-meta div {
+        margin-bottom: 3px;
+        display: flex;
+        justify-content: space-between;
+      }
+
+      .file-actions {
+        display: flex;
+        gap: 10px;
+      }
+
+      .btn {
+        padding: 8px 16px;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        text-decoration: none;
+        font-size: 0.9rem;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        flex: 1;
+        justify-content: center;
+      }
+
+      .btn-download {
+        background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+        color: white;
+      }
+
+      .btn-download:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(72, 187, 120, 0.4);
+      }
+
+      .btn-delete {
+        background: linear-gradient(135deg, #fc8181 0%, #e53e3e 100%);
+        color: white;
+      }
+
+      .btn-delete:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(252, 129, 129, 0.4);
+      }
+
+      .no-files {
+        text-align: center;
+        padding: 80px 20px;
+        color: #718096;
+      }
+
+      .no-files-icon {
+        font-size: 5rem;
+        margin-bottom: 25px;
+        display: block;
+        animation: float 3s ease-in-out infinite;
+      }
+
+      .no-files h3 {
+        font-size: 1.8rem;
+        margin-bottom: 15px;
+        color: #4a5568;
+      }
+
+      .no-files p {
+        font-size: 1.1rem;
+        margin-bottom: 30px;
+      }
+
+      .flash-messages {
+        margin-bottom: 20px;
+      }
+
+      .alert {
+        padding: 15px 20px;
+        border-radius: 10px;
+        margin-bottom: 15px;
+        font-weight: 500;
+        animation: slideDown 0.3s ease;
+      }
+
+      .alert-success {
+        background: linear-gradient(135deg, #68d391 0%, #48bb78 100%);
+        color: white;
+      }
+
+      .alert-error {
+        background: linear-gradient(135deg, #fc8181 0%, #e53e3e 100%);
+        color: white;
+      }
+
+      @keyframes fadeInUp {
+        from {
+          opacity: 0;
+          transform: translateY(30px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      @keyframes slideDown {
+        from {
+          opacity: 0;
+          transform: translateY(-10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      @keyframes float {
+        0%,
+        100% {
+          transform: translateY(0px);
+        }
+        50% {
+          transform: translateY(-10px);
+        }
+      }
+
+      .file-card:nth-child(2) {
+        animation-delay: 0.1s;
+      }
+      .file-card:nth-child(3) {
+        animation-delay: 0.2s;
+      }
+      .file-card:nth-child(4) {
+        animation-delay: 0.3s;
+      }
+      .file-card:nth-child(5) {
+        animation-delay: 0.4s;
+      }
+      .file-card:nth-child(6) {
+        animation-delay: 0.5s;
+      }
+
+      @media (max-width: 768px) {
+        .header {
+          flex-direction: column;
+          gap: 20px;
+          text-align: center;
+        }
+
+        .header h1 {
+          font-size: 2rem;
+        }
+
+        .files-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .stats {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="header">
+        <h1>📂 My Files</h1>
+        <div class="header-actions">
+          <a href="{{ url_for('main.upload') }}" class="upload-btn">
+            📁 Upload Files
+          </a>
+          <a href="{{ url_for('main.logout') }}" class="dashboard-btn">
+            🚪 Logout
+          </a>
+        </div>
+      </div>
+
+      <div class="content">
+        <!-- Flash Messages -->
+        <div class="flash-messages">
+          {% with messages = get_flashed_messages(with_categories=true) %} {% if
+          messages %} {% for category, message in messages %}
+          <div
+            class="alert alert-{{ 'error' if category == 'error' else 'success' }}"
+          >
+            {{ message }}
+          </div>
+          {% endfor %} {% endif %} {% endwith %}
+        </div>
+
+        {% if files %}
+        <!-- Stats Section -->
+        <div class="stats">
+          <div class="stat-card">
+            <h3>{{ files|length }}</h3>
+            <p>Total Files</p>
+          </div>
+          <div class="stat-card">
+            <h3>
+              {{ (files | sum(attribute='file_size') / 1024) | round(1) }} KB
+            </h3>
+            <p>Storage Used</p>
+          </div>
+          <div class="stat-card">
+            <h3>{{ files|length }}</h3>
+            <p>Recent Uploads</p>
+          </div>
+        </div>
+
+        <!-- Files Grid -->
+        <div class="files-grid">
+          {% for file in files %}
+          <div class="file-card">
+            <div class="file-header">
+              <span class="file-icon">
+                {% set ext = file.file_type.lower() if file.file_type else
+                'unknown' %} {% if ext in ['png', 'jpg', 'jpeg', 'gif'] %} 🖼️ {%
+                elif ext == 'pdf' %} 📄 {% elif ext in ['doc', 'docx'] %} 📝 {%
+                elif ext in ['xlsx', 'csv', 'xls'] %} 📊 {% elif ext in ['zip',
+                'rar', '7z'] %} 📦 {% elif ext == 'py' %} 🐍 {% elif ext == 'js'
+                %} ⚡ {% elif ext == 'html' %} 🌐 {% elif ext == 'css' %} 🎨 {%
+                else %} 📁 {% endif %}
+              </span>
+              <div class="file-info">
+                <h3>{{ file.original_filename }}</h3>
+              </div>
+            </div>
+
+            <div class="file-meta">
+              <div>
+                <span>Size:</span>
+                <span>{{ "%.1f"|format(file.file_size / 1024) }} KB</span>
+              </div>
+              <div>
+                <span>Type:</span>
+                <span
+                  >{{ file.file_type.upper() if file.file_type else 'UNKNOWN'
+                  }}</span
+                >
+              </div>
+              <div>
+                <span>Uploaded:</span>
+                <span
+                  >{{ file.upload_date[:10] if file.upload_date else 'Unknown'
+                  }}</span
+                >
+              </div>
+            </div>
+
+            <div class="file-actions">
+              <a
+                href="{{ file.s3_url }}"
+                class="btn btn-download"
+                target="_blank"
+              >
+                ⬇️ Download
+              </a>
+              <button
+                onclick="deleteFile('{{ file.file_id }}')"
+                class="btn btn-delete"
+              >
+                🗑️ Delete
+              </button>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <div class="no-files">
+          <span class="no-files-icon">📁</span>
+          <h3>No files uploaded yet</h3>
+          <p>Upload your first file to get started!</p>
+          <a
+            href="{{ url_for('main.upload') }}"
+            class="upload-btn"
+            style="text-decoration: none; display: inline-block"
+          >
+            📁 Upload Your First File
+          </a>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <script>
+      function deleteFile(fileId) {
+        if (confirm("Are you sure you want to delete this file?")) {
+          alert(
+            "Delete functionality not yet implemented in serverless version"
+          );
+        }
+      }
+    </script>
+  </body>
+</html>
